@@ -90,8 +90,8 @@ async def test_follow_and_feed_flow(
             json={
                 "article": {
                     "title": "Bob's Post",
-                    "description": "By Bob",
-                    "body": "Bob writes here",
+                    "description": "Written by Bob for the feed test",
+                    "body": "Bob writes here for everyone to read",
                     "tagList": [],
                 }
             },
@@ -142,8 +142,8 @@ async def test_favorite_count_flow(
             json={
                 "article": {
                     "title": "Favourable Article",
-                    "description": "desc",
-                    "body": "body",
+                    "description": "An article worth favouriting",
+                    "body": "This is the body of the favourable article",
                     "tagList": [],
                 }
             },
@@ -183,8 +183,8 @@ async def test_cross_user_comment_permissions(
             json={
                 "article": {
                     "title": "Alice Perm Article",
-                    "description": "desc",
-                    "body": "body",
+                    "description": "Alice writes about permissions",
+                    "body": "This article tests cross-user comment permissions",
                     "tagList": [],
                 }
             },
