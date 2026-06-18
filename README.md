@@ -80,7 +80,10 @@ Unit tests that mock repositories to verify that `ArticleService`, `CommentServi
 
 - `test_user_can_create_article_with_existing_title` passes — the implementation allows duplicate titles (they generate unique slugs by appending a suffix). This is intentional per the RealWorld spec but worth a note in docs.
 - No enforcement on comment body max length — a 10 000-character comment is accepted with 200 OK. Whether this is a bug depends on product requirements.
-- `RateLimitExceededException` is defined in `conduit/core/exceptions.py` but no middleware or route appears to raise it, suggesting the feature is partially implemented.
+- **Rate limiter is broken at scale (genuine defect).** `RateLimitingMiddleware` stores request counts in a plain Python dict on the middleware instance (`self.request_counts`). This has two real consequences:
+  1. **Multi-process deployments:** each worker process holds its own counter, so the effective limit across `N` workers is `N × 100 req/min` per IP — the rate limit is silently ineffective under any real load.
+  2. **Test suite:** the `application` fixture is session-scoped (one FastAPI instance for the entire run), so the counter accumulates across all 82 tests. After ~100 requests from the shared `testserver` IP, every subsequent test gets 429 instead of its expected status code — 20 pre-existing tests fail when the suite runs in full. They all pass in isolation, which is how the bug manifests and was discovered.
+  The fix is to back the counter with Redis (or another shared store) and use a TTL-based key per IP, making the limit both process-safe and resettable.
 
 ---
 
