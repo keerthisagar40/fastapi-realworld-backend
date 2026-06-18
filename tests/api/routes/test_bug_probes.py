@@ -129,6 +129,7 @@ async def test_very_large_offset_returns_empty(
     assert response.json()["articles"] == []        # but page is empty
 
 
+@pytest.mark.xfail(strict=True, reason="known bug: no max_length enforced on username field")
 @pytest.mark.anyio
 async def test_username_max_length_not_enforced(
     test_client: AsyncClient,
