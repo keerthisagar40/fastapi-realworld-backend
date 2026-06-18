@@ -62,7 +62,7 @@ A GitHub Actions workflow (`.github/workflows/tests.yaml`) runs the full test su
 - **Frontend / browser tests** — the assignment scope was backend; Playwright E2E covering the React UI would be the natural next step.
 - **Performance / load testing** — out of scope for a 3-hour exercise, but worth adding for the feed and article-list endpoints which hit the database with joins.
 - **Full CRUD cycle for users via service layer** — covered at the API level; service-layer unit tests were kept focused on failure paths.
-- **Rate limiting** — the implementation has a `RateLimitExceededException` class but no active enforcement was observed; would be worth probing once the middleware is wired in.
+- **Rate limiter fix** — the bug is documented and the test workaround is in place, but the production fix (Redis-backed counter) was not implemented as it is out of scope for the assignment.
 
 ---
 
@@ -106,8 +106,8 @@ A GitHub Actions workflow (`.github/workflows/tests.yaml`) runs the full test su
 
 ### What I'd do with more time
 
-1. **Boundary / security probes** — test XSS payloads in article body (confirm they're stored and returned verbatim, not executed), very long usernames/passwords, Unicode edge cases in slugs.
-2. **Feed pagination** — `limit` / `offset` on `/articles/feed` is not yet covered by tests.
+1. **Feed pagination** — `limit` / `offset` on `/articles/feed` is not yet covered by tests.
+2. **Unicode edge cases in slugs** — non-ASCII titles, emoji, right-to-left characters in slugs are not yet probed.
 
 
 ---
