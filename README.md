@@ -91,11 +91,6 @@ Unit tests that mock repositories to verify that `ArticleService`, `CommentServi
 3. **Contract tests** — verify the response shapes against the official RealWorld Postman collection to catch any field-name drift.
 4. **Feed pagination** — `limit` / `offset` on `/articles/feed` is not yet covered by tests.
 
----
-
-### Bonus: Testing non-deterministic AI features
-
-If Conduit added an LLM-powered auto-summarize or tag-suggestion feature, I would not assert on exact output. Instead I'd assert on *structural and behavioral invariants*: the response must be a non-empty string below a defined character limit; the returned tags must be a subset of a known vocabulary (or at least valid strings, not null/error messages); latency must stay under a threshold measured across repeated calls. For correctness, I'd build a small evaluation set of articles with agreed-upon "good" summaries and run an LLM-as-judge scorer (e.g., a second model call that rates relevance 1–5), asserting the average score stays above a threshold across the set. This makes the test suite deterministic at the *evaluation* level even when individual outputs vary.
 
 ---
 
