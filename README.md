@@ -111,6 +111,51 @@ A GitHub Actions workflow (`.github/workflows/tests.yaml`) runs the full test su
 
 ---
 
+### Bonus — Testing non-deterministic AI features
+
+A data analytics platform will almost certainly expose AI-powered features — summaries, classifications, anomaly explanations, natural-language query results. These cannot be tested with `assert output == expected` because the same input can produce legitimately different outputs on every call. The strategy below is how I'd approach it.
+
+#### Why it's different
+
+Deterministic code has one correct answer. A generative model has a distribution of acceptable answers. Testing shifts from *correctness* to *quality bounds* — you're asserting the output stayed within an acceptable region, not that it matched a string exactly.
+
+#### Testing strategies
+
+**1. Schema / structure validation**
+Even if the content varies, the shape of the response should not. Assert every required field exists, has the right type, and falls within expected bounds (e.g. `word_count > 0`, `key_points` is a non-empty list). This is cheap, deterministic, and catches regressions immediately.
+
+**2. Property-based assertions**
+Invariants that must hold regardless of what the model says:
+- A summary must be shorter than the original article
+- A sentiment score must be between 0.0 and 1.0
+- A response must not contain PII from the input (email, credit card patterns)
+- A translation must preserve the original language's named entities
+
+These are model-agnostic and run in CI like any other test.
+
+**3. Semantic similarity**
+Use word-overlap (Jaccard) for a cheap proxy or sentence-transformer embeddings for production-grade checks. Set a *floor* threshold — you're detecting drift to completely off-topic output, not enforcing exact paraphrasing. The threshold should be calibrated against a labelled validation set, not guessed.
+
+**4. Golden-set regression**
+A curated set of `(input, min_acceptable_score)` pairs, hand-labelled by domain experts. Run on every deployment. Track scores in an eval dashboard (LangSmith, Weights & Biases, RAGAS) rather than just asserting a hard pass/fail — a gradual score decline over weeks is as important to catch as a sudden drop.
+
+**5. LLM-as-judge**
+For complex outputs (multi-step reasoning, structured reports), use a separate, stronger model to evaluate the output against a rubric. More expensive than similarity metrics but handles nuanced quality criteria. Reserve for pre-release eval runs, not every CI push.
+
+#### Practical patterns
+
+- **Mock the LLM in unit and integration tests.** Test your own service logic — truncation, error handling, response parsing — not the third-party model. Real calls are slow, expensive, and non-deterministic.
+- **Use real calls only in scheduled eval runs** (nightly or pre-deploy), isolated from the standard test suite.
+- **Assert on the prompt, not just the output.** If your service should truncate a long article before sending it to the LLM, assert the prompt the mock received was truncated — not just that the response looks right.
+- **Test graceful degradation.** When the LLM times out or returns a 429, the service should raise a clean domain error, not propagate a raw SDK exception to the caller.
+- **Track latency and token cost as metrics.** AI calls have SLAs too. A prompt change that doubles token usage is a regression even if quality improves.
+
+#### Implementation
+
+`tests/ai/` contains a working demonstration of all these patterns against a hypothetical `ArticleSummarizer` service (see `tests/ai/summarizer.py` for the feature, `tests/ai/test_ai_summarizer.py` for the tests). No real LLM is called — everything is mocked with `unittest.mock`. The 13 tests cover schema validation, property assertions, semantic similarity, PII detection, token-limit enforcement, graceful failure, and golden-set regression.
+
+---
+
 ## Description
 
 This project is a Python-based API that uses PostgreSQL as its database.
