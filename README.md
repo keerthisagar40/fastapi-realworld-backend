@@ -80,6 +80,15 @@ Unit tests that mock repositories to verify that `ArticleService`, `CommentServi
 
 - `test_user_can_create_article_with_existing_title` passes — the implementation allows duplicate titles (they generate unique slugs by appending a suffix). This is intentional per the RealWorld spec but worth a note in docs.
 - No enforcement on comment body max length — a 10 000-character comment is accepted with 200 OK. Whether this is a bug depends on product requirements.
+- No enforcement on username max length — a 300-character username is accepted with 200 OK. No `max_length` validator on the registration schema's `username` field.
+- **Stale slug accessible after title update (genuine defect).** `get_by_slug` in the article repository uses Python `or` instead of SQLAlchemy's `|` operator:
+  ```python
+  # Bug: Python `or`, not SQL OR
+  query = select(Article).where(
+      Article.slug == slug or Article.slug.contains(slug_unique_part)
+  )
+  ```
+  In SQLAlchemy 2.x, `bool(BinaryExpression)` evaluates to `False`, so Python's short-circuit `or` always discards the left-hand `slug == slug` equality and the WHERE clause reduces to `WHERE slug LIKE '%<unique_suffix>%'`. Since title updates preserve the unique suffix while changing the slug prefix, the pre-update slug still matches the new row via the LIKE, so the article is reachable under both the old and new slug simultaneously. The fix is to replace `or` with `|` (SQLAlchemy's bitwise-or, which generates a SQL `OR`) or drop the `contains` fallback entirely and use an exact match. Confirmed by inspecting the generated SQL and by the probe test `test_stale_slug_accessible_after_title_update`.
 - **Rate limiter is broken at scale (genuine defect).** `RateLimitingMiddleware` stores request counts in a plain Python dict on the middleware instance (`self.request_counts`). This has two real consequences:
   1. **Multi-process deployments:** each worker process holds its own counter, so the effective limit across `N` workers is `N × 100 req/min` per IP — the rate limit is silently ineffective under any real load.
   2. **Test suite:** the `application` fixture is session-scoped (one FastAPI instance for the entire run), so the counter accumulates across all 82 tests. After ~100 requests from the shared `testserver` IP, every subsequent test gets 429 instead of its expected status code — 20 pre-existing tests fail when the suite runs in full. They all pass in isolation, which is how the bug manifests and was discovered.
