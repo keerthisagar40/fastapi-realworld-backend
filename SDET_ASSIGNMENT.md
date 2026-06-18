@@ -49,6 +49,10 @@ Unit tests that mock repositories to verify `ArticleService`, `CommentService`, 
 
 **CI:** GitHub Actions workflow (`.github/workflows/tests.yaml`) runs the full suite on every push/PR using a postgres:16 service container. Result: **123 passed, 1 xfailed**.
 
+**Developer tooling:**
+- `CLAUDE.md` — auto-loaded by Claude Code every session; documents the docker test command, the 20 expected rate-limiter failures, the three known product bugs, and fixture rules so no context is lost between sessions.
+- `/test-and-push` skill (`.claude/commands/test-and-push.md`) — invokable checklist that enforces correct test-writing patterns (vacuous loop guards, no non-spec contract assertions, multi-user setup, fixture rules) and the push workflow before any code reaches the remote.
+
 ---
 
 ### How I used AI agents

@@ -5,7 +5,6 @@
 ### [Demo](https://demo.realworld.io/)&nbsp;&nbsp;&nbsp;&nbsp;[RealWorld](https://github.com/gothinkster/realworld)
 
 > **SDET Assignment** — see [SDET_ASSIGNMENT.md](./SDET_ASSIGNMENT.md) for test coverage summary, bugs found, AI usage, and bonus answer.
-> **Decision journal** — see [SDET_INTERVIEW_GUIDE.md](./SDET_INTERVIEW_GUIDE.md) for the reasoning behind every decision, Claude corrections, and interview talking points.
 
 ---
 
