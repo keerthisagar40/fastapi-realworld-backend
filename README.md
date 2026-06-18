@@ -32,6 +32,7 @@ This FastAPI + PostgreSQL backend implements the full RealWorld / Conduit spec. 
 | `test_validation.py` | Empty title/body/description, empty comment body, missing required fields → 422 |
 | `test_tags.py` | Global tag list returns tags present in articles |
 | `test_health_check.py` | Health endpoint returns 200 |
+| `test_contract.py` | Response shape / field / type / timestamp-format assertions derived from the official RealWorld Postman collection; covers auth, articles (list, create, get, update, favorite, unfavorite, feed), comments, profiles (get, follow, unfollow), tags (17 tests) |
 
 #### E2E flows (`tests/api/routes/test_e2e_flows.py`)
 
@@ -100,8 +101,7 @@ Unit tests that mock repositories to verify that `ArticleService`, `CommentServi
 
 1. **CI** — add a GitHub Actions workflow that spins up a PostgreSQL service container, runs migrations, and executes the full test suite on every PR.
 2. **Boundary / security probes** — test XSS payloads in article body (confirm they're stored and returned verbatim, not executed), very long usernames/passwords, Unicode edge cases in slugs.
-3. **Contract tests** — verify the response shapes against the official RealWorld Postman collection to catch any field-name drift.
-4. **Feed pagination** — `limit` / `offset` on `/articles/feed` is not yet covered by tests.
+3. **Feed pagination** — `limit` / `offset` on `/articles/feed` is not yet covered by tests.
 
 
 ---

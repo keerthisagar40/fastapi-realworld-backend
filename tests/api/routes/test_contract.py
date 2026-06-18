@@ -8,11 +8,12 @@ Each test verifies that a response:
   - uses the correct types (int for counts, list for arrays)
   - formats timestamps as ISO 8601 with decimal seconds and a UTC suffix,
     matching the regex the Postman suite uses:
-      r'^\d{4,}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+(?:[+-]\d{2}:\d{2}|Z)$'
+      ^\\d{4,}-[01]\\d-[0-3]\\dT[0-2]\\d:[0-5]\\d:[0-5]\\d\\.\\d+(?:[+-]\\d{2}:\\d{2}|Z)$
 """
 import re
 
 import pytest
+from fastapi import FastAPI
 from httpx import AsyncClient
 
 from conduit.dtos.domain.article import ArticleDTO
@@ -141,6 +142,7 @@ async def test_contract_article_list_response_shape(
     assert "articlesCount" in body
     assert isinstance(body["articlesCount"], int), "articlesCount must be int"
     assert isinstance(body["articles"], list)
+    assert len(body["articles"]) > 0, "need at least one article to validate shape"
     for article in body["articles"]:
         assert_article_shape(article)
 
@@ -204,9 +206,57 @@ async def test_contract_favorite_article_response_shape(
 
 
 @pytest.mark.anyio
+async def test_contract_unfavorite_article_response_shape(
+    authorized_test_client: AsyncClient, test_article: ArticleDTO
+) -> None:
+    await authorized_test_client.post(f"/articles/{test_article.slug}/favorite")
+    response = await authorized_test_client.delete(
+        f"/articles/{test_article.slug}/favorite"
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert "article" in body
+    assert_article_shape(body["article"])
+    assert body["article"]["favorited"] is False
+
+
+@pytest.mark.anyio
 async def test_contract_feed_response_shape(
     authorized_test_client: AsyncClient,
+    application: FastAPI,
+    test_client: AsyncClient,
 ) -> None:
+    # Register a second user, publish an article as them, follow them so the
+    # feed is non-empty — without this the article-shape assertions never execute.
+    resp = await test_client.post(
+        "/users",
+        json={"user": {
+            "username": "feed-author-ct",
+            "email": "feed-author-ct@example.com",
+            "password": "password",
+        }},
+    )
+    assert resp.status_code == 200
+    author_token = resp.json()["user"]["token"]
+
+    async with AsyncClient(
+        app=application,
+        base_url="http://testserver/api",
+        headers={"Authorization": f"Token {author_token}"},
+    ) as author_client:
+        resp = await author_client.post(
+            "/articles",
+            json={"article": {
+                "title": "Feed Author Article",
+                "description": "Article for feed contract test",
+                "body": "Body of the feed author article for contract test",
+                "tagList": [],
+            }},
+        )
+        assert resp.status_code == 200
+
+    await authorized_test_client.post("/profiles/feed-author-ct/follow")
+
     response = await authorized_test_client.get("/articles/feed")
     assert response.status_code == 200
     body = response.json()
@@ -214,6 +264,7 @@ async def test_contract_feed_response_shape(
     assert "articlesCount" in body
     assert isinstance(body["articlesCount"], int)
     assert isinstance(body["articles"], list)
+    assert len(body["articles"]) > 0, "feed must be non-empty to validate article shape"
     for article in body["articles"]:
         assert_article_shape(article)
 
@@ -249,10 +300,11 @@ async def test_contract_list_comments_response_shape(
     )
     assert response.status_code == 200
     body = response.json()
+    # The spec returns {"comments": [...]} — commentsCount is an implementation
+    # extension and is intentionally not asserted here.
     assert "comments" in body
-    assert "commentsCount" in body
-    assert isinstance(body["commentsCount"], int)
     assert isinstance(body["comments"], list)
+    assert len(body["comments"]) > 0, "need at least one comment to validate shape"
     for comment in body["comments"]:
         assert_comment_shape(comment)
 
@@ -289,6 +341,22 @@ async def test_contract_follow_profile_response_shape(
     assert "profile" in body
     assert_profile_shape(body["profile"])
     assert body["profile"]["following"] is True
+
+
+@pytest.mark.anyio
+async def test_contract_unfollow_profile_response_shape(
+    authorized_test_client: AsyncClient,
+    session: AsyncSession,
+    user_service: IUserService,
+) -> None:
+    other = await create_another_test_user(session=session, user_service=user_service)
+    await authorized_test_client.post(f"/profiles/{other.username}/follow")
+    response = await authorized_test_client.delete(f"/profiles/{other.username}/follow")
+    assert response.status_code == 200
+    body = response.json()
+    assert "profile" in body
+    assert_profile_shape(body["profile"])
+    assert body["profile"]["following"] is False
 
 
 # ---------------------------------------------------------------------------
