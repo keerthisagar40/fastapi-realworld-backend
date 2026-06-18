@@ -51,6 +51,12 @@ Unit tests that mock repositories to verify that `ArticleService`, `CommentServi
 
 ---
 
+### CI
+
+A GitHub Actions workflow (`.github/workflows/tests.yaml`) runs the full test suite on every push and pull request to `master`. It spins up a PostgreSQL 16 service container, installs dependencies with pip caching, and executes `pytest tests/ -v` with the same environment variables used locally.
+
+---
+
 ### What was deliberately left out
 
 - **Frontend / browser tests** — the assignment scope was backend; Playwright E2E covering the React UI would be the natural next step.
@@ -99,9 +105,8 @@ Unit tests that mock repositories to verify that `ArticleService`, `CommentServi
 
 ### What I'd do with more time
 
-1. **CI** — add a GitHub Actions workflow that spins up a PostgreSQL service container, runs migrations, and executes the full test suite on every PR.
-2. **Boundary / security probes** — test XSS payloads in article body (confirm they're stored and returned verbatim, not executed), very long usernames/passwords, Unicode edge cases in slugs.
-3. **Feed pagination** — `limit` / `offset` on `/articles/feed` is not yet covered by tests.
+1. **Boundary / security probes** — test XSS payloads in article body (confirm they're stored and returned verbatim, not executed), very long usernames/passwords, Unicode edge cases in slugs.
+2. **Feed pagination** — `limit` / `offset` on `/articles/feed` is not yet covered by tests.
 
 
 ---
