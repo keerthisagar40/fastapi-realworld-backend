@@ -100,6 +100,7 @@ A GitHub Actions workflow (`.github/workflows/tests.yaml`) runs the full test su
   1. **Multi-process deployments:** each worker process holds its own counter, so the effective limit across `N` workers is `N × 100 req/min` per IP — the rate limit is silently ineffective under any real load.
   2. **Test suite:** the `application` fixture is session-scoped (one FastAPI instance for the entire run), so the counter accumulates across all 82 tests. After ~100 requests from the shared `testserver` IP, every subsequent test gets 429 instead of its expected status code — 20 pre-existing tests fail when the suite runs in full. They all pass in isolation, which is how the bug manifests and was discovered.
   The fix is to back the counter with Redis (or another shared store) and use a TTL-based key per IP, making the limit both process-safe and resettable.
+  **Test suite workaround:** to prevent the rate limiter from causing false failures in CI, `tests/conftest.py` raises the class-level ceiling to 100,000 for the test session via a session-scoped autouse fixture. This does not fix the production bug — it only prevents it from interfering with unrelated tests. The bug is still present in the middleware code and would affect any real deployment.
 
 ---
 
