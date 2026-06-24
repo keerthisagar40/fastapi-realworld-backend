@@ -78,8 +78,6 @@ Unit tests that mock repositories to verify `ArticleService`, `CommentService`, 
 
 - Feed pagination — `limit`/`offset` on `/articles/feed` not yet tested
 - Unicode edge cases in slugs — non-ASCII titles, emoji, RTL characters
-- Redis-backed rate limiter fix (production fix, not just test workaround)
-- Playwright E2E for the React frontend
 
 ---
 
