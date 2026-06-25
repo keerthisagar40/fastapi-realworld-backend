@@ -12,18 +12,7 @@ FastAPI + PostgreSQL backend implementing the full RealWorld / Conduit spec. I c
 
 | File | Coverage |
 |---|---|
-| `test_registaration.py` | Register happy path; duplicate email / username → 400 |
-| `test_login.py` | Login happy path; wrong email, wrong password → 400 |
-| `test_user.py` | Get current user; update email, username, bio, password |
-| `test_profile.py` | Get profile; follow / unfollow; can't follow self; can't follow twice; can't unfollow if not following; 404 for unknown user |
-| `test_article.py` | Create (with/without tags, duplicate tags, same title); read; delete own; can't delete/update foreign article; favorite / unfavorite; can't double-favorite |
-| `test_article_filters.py` | Filter by tag, author, favorited; pagination (limit/offset) |
-| `test_article_integrity.py` | Deleting an article removes its comments and favorites |
 | `test_comments.py` | Create comment; response shape; list with count; unauthenticated list; delete own; deleted comment disappears; can't delete another user's comment → 403; comment on non-existent article → 404 |
-| `test_auth_permissions.py` | Create article / favorite / comment without auth → 403; invalid JWT → 403 |
-| `test_validation.py` | Empty title/body/description, empty comment body, missing required fields → 422 |
-| `test_tags.py` | Global tag list returns tags present in articles |
-| `test_health_check.py` | Health endpoint returns 200 |
 | `test_contract.py` | Response shape / field / type / timestamp-format assertions derived from the official RealWorld Postman collection; covers auth, articles, comments, profiles, tags (17 tests) |
 
 #### E2E flows (`tests/api/routes/test_e2e_flows.py`)
@@ -35,9 +24,6 @@ FastAPI + PostgreSQL backend implementing the full RealWorld / Conduit spec. I c
 | `test_favorite_count_flow` | Favorite → `favoritesCount` increments → unfavorite → back to 0 |
 | `test_cross_user_comment_permissions` | Alice publishes → Bob comments → Alice can't delete Bob's comment (403) → Bob can (204) |
 
-#### Service-layer tests (`tests/services/`)
-
-Unit tests that mock repositories to verify `ArticleService`, `CommentService`, and `UserService` raise the correct domain exceptions when a repository call fails.
 
 #### Boundary / probe tests (`tests/api/routes/test_bug_probes.py`)
 
@@ -59,7 +45,7 @@ Unit tests that mock repositories to verify `ArticleService`, `CommentService`, 
 
 **Tool:** Claude Code (claude-sonnet-4-6 via the CLI).
 
-**Where it helped:** Surveying the existing test surface and identifying gaps; generating scaffolds for `test_comments.py` and `test_e2e_flows.py` in line with existing fixture conventions; catching that `ArticleData` uses `favoritesCount` as the JSON alias before writing assertions.
+**Where it helped:** Surveying the existing test surface and identifying gaps; generating scaffolds for `test_comments.py` and `test_e2e_flows.py` in line with existing fixture conventions.
 
 **Where I overrode it:** The first draft of `test_user_cannot_delete_another_users_comment` called `create_app()` inside the test body, bypassing test isolation. I rewrote it to use the session-scoped `application` fixture. I also rejected the agent's suggestion to stub the second user's token inside a fixture, preferring `auth_token_service` directly in the test — simpler and makes the dependency explicit.
 
