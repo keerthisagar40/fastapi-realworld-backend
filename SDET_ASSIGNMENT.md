@@ -2,7 +2,7 @@
 
 ### Why this implementation
 
-FastAPI + PostgreSQL backend implementing the full RealWorld / Conduit spec. I chose it because the stack (async Python, SQLAlchemy, pytest-anyio) is one I'm comfortable owning end-to-end, the app has clean layering (routes → services → repositories) that makes failure modes easy to reason about, and it had no existing test coverage — meaning every test adds signal rather than duplicating what's already there.
+FastAPI + PostgreSQL backend implementing the full RealWorld / Conduit spec. I chose it because the stack (async Python, SQLAlchemy, pytest-anyio) is one I'm comfortable owning end-to-end, the app has clean layering (routes → services → repositories) that makes failure modes easy to reason about, and it had some existing test coverage
 
 ---
 
