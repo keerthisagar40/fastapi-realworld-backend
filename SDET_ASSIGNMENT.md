@@ -64,6 +64,7 @@ FastAPI + PostgreSQL backend implementing the full RealWorld / Conduit spec. I c
 
 - Feed pagination — `limit`/`offset` on `/articles/feed` not yet tested
 - Unicode edge cases in slugs — non-ASCII titles, emoji, RTL characters
+- Increase coverage for all areas above 85%
 
 ---
 
